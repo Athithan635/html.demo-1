@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบทดสอบ: การใช้เทคโนโลยีดิจิทัลเพื่ออาชีพ</title>
+    <style>
+        /* --- General and Theming --- */
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun&display=swap');
+
+        :root {
+            --matrix-gold: #FFBF00;
+            --dark-gold: #4d3800;
+            --matrix-green: #0dff0d; /* Green for alternating text */
+            --bright-red: #ff4141;
+            --dark-red: #4d0000;
+            --bg-color: #000000;
+            --glow-color: rgba(255, 191, 0, 0.6);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--matrix-gold);
+            font-family: 'Sarabun', 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            text-align: center;
+            overflow-x: hidden;
+            overflow-y: auto; /* --- REQUIREMENT 2: Ensure vertical scrollbar is visible --- */
+        }
+        
+        /* --- REQUIREMENT 1: Body Background Image Fade-in to full visibility --- */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-image: url('https://img5.pic.in.th/file/secure-sv1/the_matrix-sadaos_story.th.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            z-index: -2; /* Behind the canvas */
+            animation: fadeInBodyBg 5s ease-in-out forwards;
+            animation-delay: 1s;
+        }
+
+        @keyframes fadeInBodyBg {
+            from { opacity: 0; }
+            to { opacity: 1; } /* Fade to fully visible */
+        }
+
+        /* --- Themed Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1100;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--matrix-gold);
+            border-radius: 6px;
+            border: 2px solid #1a1100;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #ffd700;
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* In front of body background, behind content */
+        }
+        
+        /* --- Containers --- */
+        .container {
+            background: rgba(20, 15, 0, 0.85);
+            border: 2px solid var(--matrix-gold);
+            padding: 2em;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 0 20px var(--glow-color), inset 0 0 15px rgba(255, 191, 0, 0.5);
+            margin-top: 5vh;
+            margin-bottom: 5vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #start-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 70vh;
+        }
+        
+        /* --- Text and Flicker Effect --- */
+        h1, h2, .creator-credit {
+            text-shadow: 0 0 7px var(--glow-color), 0 0 12px var(--glow-color);
+            animation: flicker 2.5s infinite alternate;
+            z-index: 1;
+            position: relative;
+        }
+        
+        .creator-credit {
+            font-size: 1.5em;
+            margin-top: 30px;
+            animation-delay: -0.5s;
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                text-shadow: 0 0 4px var(--glow-color), 0 0 11px var(--glow-color), 0 0 19px var(--glow-color);
+                color: var(--matrix-gold);
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+                color: #ffefb3;
+            }
+        }
+        
+        /* --- Buttons --- */
+        .btn {
+            background: transparent;
+            border: 2px solid var(--matrix-gold);
+            color: var(--matrix-gold);
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            text-shadow: 0 0 5px var(--glow-color);
+            border-radius: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--matrix-gold);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .btn:disabled {
+            border-color: var(--dark-gold);
+            color: var(--dark-gold);
+            text-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        /* --- Quiz Section --- */
+        #quiz-container { display: none; }
+        .question-block {
+            margin-bottom: 35px;
+            padding: 20px;
+            border: 1px solid var(--dark-gold);
+            border-radius: 10px;
+            text-align: left;
+            position: relative;
+            background: rgba(0,0,0,0.4);
+            transition: border 0.3s;
+            overflow: hidden;
+        }
+        
+        .question-block > * {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .question-block p {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        /* --- REQUIREMENT 2: Alternating Question Colors --- */
+        .question-block:nth-child(odd) > p {
+            color: var(--matrix-green);
+            text-shadow: 0 0 5px rgba(13, 255, 13, 0.75);
+        }
+        .question-block:nth-child(even) > p {
+            color: var(--matrix-gold);
+            text-shadow: 0 0 5px var(--glow-color);
+        }
+
+        /* --- REQUIREMENT 3: In-box Golden Rain Animation --- */
+        @keyframes rain-fall {
+            from { background-position-y: 0; }
+            to { background-position-y: 1000px; }
+        }
+
+        .question-block.is-correct-answered::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 200%; /* Make taller to ensure it fills during animation */
+            background-image: url('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAHBg8SBw4QDw0QDw4PEA8NEA8PEA4QFREWFhUSFRUYHSggGBolGxMVITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OFQ8QFS0dFR0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSstLS0tLS0rLS0tKy0tLf/AABEIAJgBSAMBIgACEQEDEQH/xAAbAAEBAQEBAQEBAAAAAAAAAAAAAgEDBAUGB//EADkQAAIBAgMFAwYKBwAAAAAAAAABAgMRBCEFEjFBUWEGEyJxgZGhscEHFSMkMzVCUuEWJCU0coKi/8QAGQEBAQEBAQEAAAAAAAAAAAAAAAECAwQF/8QAIREBAQEBAAICAgMBAAAAAAAAAAERAhIDITFBURMiYSL/2gAMAwEAAhEDEQA/AP3gAAAAAAAAAAACAAIAAggCCAIqAIoAIIAgACAIIAgACAIIAgACAAIAAgACAIIAgACAIoAIIAgACAAIAAgACAIIAgACAIIAigCCAJgATAAAAAAAAAAAAAACAIIAigCKAIIAgACAIIAgACAAIAAgACAIoAigCCAAIAggCAAIoAigCAAAIAggCKAIIAgACAIIAgACAIIAigCaAEwAAAAAAAAAAAAAIAigCKAIoAigCCAAIAggCAAAIAAgCKAIIAigCCAAIAggCKAIoAgACAIIAigCCAAIAAgACAAIAggCKAIoAmmABMAAAAAAAAAAAAAAIAggCAAIoAigCKAIIAigCKAIAAgACAAIAggCAAIoAigCCAIoAigCCAAIAigCKAIIAigCCAIoAigCCAAIAAgACAJpgATAAAAAAAAAAAAAACAIoAigCKAIIAigCKAIoAigACAAIAggCAAIoAigCKAIIAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIAmmABMAAAAAAAAAAAAAAIAigCKAIIAigCKAIoAigCKAIIAigCKAIAAgACAAIAggCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIIAmgBMAAAAAAAAAAAAAAIAigCKAIIAigCKAIoAigCKAIoAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCKAIoAmgBMAAAAAAAAAAAAAAIAigCKAIIAigCKAIIAigCKAIIAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCKAJpgATAAAAAAAAAAAAAAgCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCKAIIAmmABMAAAAAAAAAAAAIgCCAIIAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIoAmmABMAAAAAAAAAAAAIgCCAIIAigCKAIIAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAmgBMAAAAAAAAAAACIggggCCAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAJpgATAAAAAAAAAAACIIggggCCAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCaAEwAAAAAAAAAAAAAIIIIAggCCAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAmgBMAAAAAAAAAAAAAAggggCCAIIAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAmmABMAAAAAAAAAAAAAACCACAIIAggCCAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAmgBMAAAAAAAAAAAAACAAIAAgACAIIAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAmmABMAAAAAAAAAAAAACAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAJpgATAAAAAAAAAAAAAAACAIoAigCKAIIAigCKAIoAigCKAIoAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIIAigCKAIoAmmABMAAAAAAAAAAAAAAIAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIoAmgBMAAAAAAAAAAAAAACAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAJoATAAAAAAAAAAAAAAAgCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIoAigCKAIoAigCKAIoAmmABMAAAAAAAAAAAAAAIAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIoAmmABMAAAAAAAAAAAAAACAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIoAmgBMAAAAAAAAAAAAAACAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAIoAigCaAEwAAAAAAAAAAAAAAIAigCKAIoAigCKAIIAigCKAIIAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCaAEwAAAAAAAAAAAAAAAAAAAIAigCKAIoAigCKAIIAigCKAIIAigCKAIoAigCKAIIAigCKAIoAigCaAEwAAAAAAAAAAAAAAAAAAAIAigCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIIAigCaAEwAAAAAAAAAAAAAAAAAAAIAigCKAIoAigCKAIIAigCKAIoAigCKAIIAigCKAIoAmgBMAAAAAAAAAAAAAAAAAAAACAIoAigCKAIoAigCKAIoAigCKAIoAigCKAIIAigCKAJoATAAAAAAAAAAAAAAAAAAAAIAigCKAIoAigCKAIoAigCKAIoAigCKAJoATAAAAAAAAAAAAAAAAAAAAIAigCKAIoAigCKAIoAigCKAJoATAAAAAAAAAAAAAAAAAAAAIAigCKAIoAigCKAIoAmgBMAAAAAAAAAAAAAAAAAAAACAIoAmgBMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/2g==');
+            background-size: cover;
+            z-index: 1; /* Behind content but in front of block's main bg */
+            opacity: 0.8;
+            animation: rain-fall 5s linear infinite;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .option-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--dark-gold);
+            border: 1px solid var(--matrix-gold);
+            color: var(--matrix-gold);
+            cursor: pointer;
+            text-align: left;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #604000;
+        }
+        
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .option-btn.selected {
+            background-color: #805500;
+            box-shadow: 0 0 8px var(--glow-color);
+        }
+        
+        .option-btn.correct {
+            background: var(--dark-gold) !important;
+            border: 2px solid var(--matrix-gold) !important;
+            color: white !important;
+            box-shadow: 0 0 10px var(--glow-color) !important;
+        }
+        
+        .option-btn.incorrect {
+            background: var(--dark-red) !important;
+            border: 2px solid var(--bright-red) !important;
+            color: #ffc2c2 !important;
+            text-decoration: line-through;
+        }
+        
+        .question-controls {
+            margin-top: 15px;
+            text-align: right;
+            height: 40px;
+        }
+
+        .feedback-text {
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .feedback-text.correct {
+            color: var(--matrix-gold);
+            background: var(--dark-gold);
+        }
+        
+        .feedback-text.incorrect {
+            color: var(--bright-red);
+            background: var(--dark-red);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+
+    <div id="main-content">
+        <div id="start-screen" class="container">
+            <h1>แบบทดสอบ<br>การใช้เทคโนโลยีดิจิทัลเพื่ออาชีพ</h1>
+            <p class="creator-credit">โปรแกรมโดย อาจารย์สุนทร เอี่ยมเกษมสิน</p>
+            <button id="start-btn" class="btn">เริ่มทำแบบทดสอบ</button>
+        </div>
+
+        <div id="quiz-container" class="container">
+            <h2>ทำแบบทดสอบ (ตอบทีละข้อ)</h2>
+            <div id="questions-wrapper"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Matrix Background Canvas ---
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const alphabet = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const rainDrops = Array(Math.floor(columns)).fill(1);
+        
+        // --- REQUIREMENT 1: Colors for Green-to-Gold Transition ---
+        const startColorRGB = [0, 255, 0];   // Green
+        const endColorRGB = [255, 191, 0]; // Gold
+
+        const drawMatrix = () => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < rainDrops.length; i++) {
+                // Calculate color based on vertical position
+                const progress = (rainDrops[i] * fontSize) / canvas.height;
+                const r = Math.floor(startColorRGB[0] + (endColorRGB[0] - startColorRGB[0]) * progress);
+                const g = Math.floor(startColorRGB[1] + (endColorRGB[1] - startColorRGB[1]) * progress);
+                const b = Math.floor(startColorRGB[2] + (endColorRGB[2] - startColorRGB[2]) * progress);
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    rainDrops[i] = 0;
+                }
+                rainDrops[i]++;
+            }
+        };
+        setInterval(drawMatrix, 33);
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            rainDrops.length = Math.floor(window.innerWidth / fontSize);
+            rainDrops.fill(1);
+        });
+
+        // --- Quiz Data ---
+        const quizData = [
+            { question: "การย่อหน้าในเอกสาร Microsoft Office word กดคีย์บอร์ดที่ปุ่มใด", options: { A: "Caps Lock", B: "Shift", C: "Alt", D: "Tab" }, answer: "D" },
+            { question: "ถ้าต้องการจัดเอกสารให้เป็นแนวนอนต้องเข้าไปที่แถบคำสั่งใด?", options: { A: "หน้าแรก>การวางแนว>แนวนอน", B: "แทรก>การวางแนว>แนวนอน", C: "เค้าโครงหน้ากระดาษ>การวางแนว>แนวนอน", D: "มุมมอง>การวางแนว>แนวนอน" }, answer: "C" },
+            { question: "ถ้าต้องการจัดคอลัมน์ให้กับเอกสารต้องเข้าไปที่แถบคำสั่งใด?", options: { A: "หน้าแรก>คอลัมน์", B: "แทรก>คอลัมน์", C: "กดเข้าไปที่คำสั่งเค้าโครงหน้ากระดาษ เลือกการตั้ง คอลัมน์", D: "มุมมอง>คอลัมน์" }, answer: "C" },
+            { question: "ไฟล์เอกสารของ Microsoft Office Word นั้นจะมีนามสกุลอะไร", options: { A: ".pptx", B: ".xlsx", C: ".jpg", D: ".docx" }, answer: "D" },
+            { question: "ผสานเซลล์ในตาราง Microsoft Office Word หมายถึงอะไร?", options: { A: "แถวในแนวตั้ง", B: "แถวในแนวนอน", C: "ช่องภายใตตาราง", D: "การรวมช่องในตารางเป็นช่องเดียว" }, answer: "D" },
+            { question: "ในการสร้างแผนผังองค์กร ต้องใช้เครื่องใดในการสร้างถึงจะเหมาะสม?", options: { A: "SmartArt", B: "รูปร่าง", C: "แผนภูมิ", D: "อักษรศิลป์" }, answer: "A" },
+            { question: "การใส่เส้นขอบของหน้าเอกสารต้องเลือกที่แถบค่าสั่งใด?", options: { A: "หน้าแรก", B: "แทรก", C: "เค้าโครงหน้ากระดาษ", D: "มุมมอง" }, answer: "C" },
+            { question: "ถ้าต้องการแสดงไม้บรรทัดในเอกสาร ต้องเลือกที่แถบคำสั่งใด?", options: { A: "หน้าแรก", B: "มุมมอง", C: "เค้าโครงหน้ากระดาษ", D: "การส่งจดหมาย" }, answer: "B" },
+            { question: "โปรแกรมตารางงานเหมาะสมกับงานประเภทใด", options: { A: "งานพิมพ์เอกสาร", B: "งานคำนวณ", C: "งานตกแต่งภาพ", D: "งานฐานข้อมูล" }, answer: "B" },
+            { question: "ข้อใดคือลักษณะของโปรแกรมตารางงาน", options: { A: "แบ่งหน้าเอกสารออกเป็นสไลด์", B: "แบ่งเอกสารเป็นเฟรม", C: "แบ่งหน้าเอกสารเป็นเลเยอร์", D: "แบ่งหน้าเอกสารเป็นแถวและคอลัมน์" }, answer: "D" },
+            { question: "ชื่อวิชาคอมพิวเตอร์และสารสนเทศเพื่องานอาชีพเขียนเป็นภาษาอังกฤษตรงกับข้อใด", options: { A: "ComputerComputer", B: "Computer and Information for careers", C: "Computer and for careers" }, answer: "B" },
+            { question: "ข้อใด ไม่ใช่ คำสั่งในการทำสำเนาไฟล์ข้อมูล", options: { A: "คลิกเลือกไฟล์ แล้วกดปุ่ม Ctrl + C", B: "คลิกเลือกไฟล์ แล้วคลิกไอคอนคำสั่ง", C: "คลิกเลือกไฟล์ แล้วคลิกขวาเลือก Copy", D: "คลิกเลือกไฟล์ แล้วคลิกเมาส์ค้าง + กดปุ่มCtrl ลากแล้ว ปล่อย" }, answer: "B" },
+            { question: "ข้อใด ไม่ใช่ คำสั่งเปลี่ยนชื่อไฟล์", options: { A: "คลิกเลือกไฟล์แล้วคลิกซ้ายอีก 1 ครั้ง", B: "คลิกเลือกไฟล์ แล้วกดปุ่ม F2", C: "คลิกเลือกไฟล์ คลิกขวาเลือก Rename", D: "คลิกเลือกไฟล์ แล้วกดปุ่ม Ctrl + Alt" }, answer: "D" },
+            { question: "ข้อใดเป็นการลบไฟล์แบบไม่สามารถเรียกคืนจาก ถัง ขยะได้", options: { A: "คลิกเลือกไฟล์ แล้วกดปุ่ม shift + Delete", B: "คลิกเลือกไฟล์ แล้วคลิกขวาเลือก Delete", C: "คลิกเลือกไฟล์ แล้วกดปุ่ม Del", D: "คลิกเลือกไฟล์ แล้วกดปุ่ม กากบาด" }, answer: "A" },
+            { question: "ข้อใด ไม่ใช่ วิธีการปิดหน้าต่างโปรแกรม หรือ ออกจาก โปรแกรม ในระบบปฏิบัติการWindows", options: { A: "คลิกที่เมนู Edit -> Close", B: "กดปุ่ม Alt + F4", C: "คลิกขวาที่ Task Bar แล้วเลือกเมนู Close", D: "คลิกที่เมนู File -> Close" }, answer: "A" },
+            { question: "แถบเครื่องมือต่างๆ สำหรับการใช้งานโปรแกรม วินโดวส์ จะเป็นรูปไอคอนของคำสั่งที่ใช้บ่อยๆ เรียกว่า", options: { A: "Menu Bar", B: "Tool Bar", C: "tatus Bar", D: "Title Bar" }, answer: "B" },
+            { question: "เมนู ShortCut คือข้อใด", options: { A: "ภาพที่สื่อถึงโปรแกรม", B: "ส่วนที่ทำหน้าที่ไปเปิดโปรแกรม", C: "โปรแกรมคอมพิวเตอร์", D: "ไฟล์ข้อมูลของโปรแกรม" }, answer: "B" },
+            { question: "โปรแกรมใดที่เหมาะสำหรับในการจัดทำเอกสาร?", options: { A: "Microsoft Office Word", B: "Microsoft Office Excel", C: "Microsoft Office PowerPoint", D: "Microsoft Office Outlook" }, answer: "A" },
+            { question: "แหล่งเก็บข้อมูล (Data Source) คืออะไร?", options: { A: "เอกสารที่กำลังเปิดใช้งานอยู่ในปัจจุบัน", B: "เอกสารของผู้รับจดหมายเป็นแบบฐานข้อมูล", C: "เอกสารที่มีข้อความในจดหมายแตกต่างกัน", D: "เอกสารที่มีข้อความในจดหมายที่เหมือนกัน" }, answer: "B" },
+            { question: "ฮาร์ดแวร์ที่ทำหน้าที่เป็นหน่วยความจำมีกี่ประเภท", options: { A: "4 ประเภท", B: "3 ประเภท", C: "1 ประเภท", D: "2 ประเภท" }, answer: "D" },
+            { question: "ข้อใดจะต้องทำเป็นอันดับแรกในการใส่ เชิงอรรถลงไปในเอกสาร", options: { A: "เลือกข้อความที่ต้องการทำเป็นเชิงอรรถ", B: "เลือกตำแหน่งที่ต้องการใส่คาอธิบายของ เชิงอรรถ", C: "ขึ้นบรรทัดใหม่", D: "เว้นระยะช่องว่าง" }, answer: "B" },
+            { question: "ข้อดีของใช้จดหมายเวียนในการสร้างเอกสาร คือ ข้อใด", options: { A: "ทำให้การสร้างจดหมายใช้เวลาน้อย", B: "ทำให้การสร้างจดหมายง่ายขึ้น", C: "ทำให้สะดวกในการปรับปรุงและแก้ไข", D: "ถูกทุกข้อ" }, answer: "D" },
+            { question: "สาย Local Area Network คืออะไร", options: { A: "คือสาย LAN  เพื่อใช้ในการเชื่อมต่อเครือข่ายเข้าด้วยกันเพื่อส่งข้อมูลหรือเชื่อมต่ออินเตอร์เน็ต", B: "สายเชื่อมต่อเม้าส์", C: "สายเชื่อมต่อจอภาพ", D: "สายเชื่อต่อสัญญาณทีวี" }, answer: "A" },
+            { question: "เมื่อต้องการตั้งค่าหน้ากระดาษ Word ต้องเข้าเมนูใด", options: { A: "Layout", B: "Rename", C: "insert", D: "Tabel" }, answer: "A" },
+            { question: "โปรแกรม Microsoft PowerPoint จัดเป็นโปรแกรมประเภทใด", options: { A: "นำเสนอข้อมูลและสามารถบันทึกวิดีโอตอนนำเสนอได้", B: "วาดรูปกราฟิก", C: "พิมพ์เอกสารราชการ", D: "คำนวณสูตร" }, answer: "A" },
+            { question: "พื้นที่การทำงานของ Microsoft PowerPoint เรียกว่าอะไร", options: { A: "Slide", B: "File", C: "Desktop", D: "Record" }, answer: "A" },
+            { question: "ถ้าต้องการใส่เอฟเฟคต์ลักษณะพิเศษของภาพเคลื่อนไหวจะต้องเลือกแท็บเครื่องมือใด", options: { A: "แทรก", B: "ออกแบบ", C: "ภาพเคลื่อนไหว", D: "การนำเสนอภาพนิ่ง" }, answer: "C" },
+            { question: "การจัดรูปแบบพื้นหลังทำได้โดยวิธีใด", options: { A: "มุมมอง–>ลักษณะพื้นหลัง", B: "แทรก–>ลักษณะพื้นหลัง", C: "แก้ไข–>ลักษณะพื้นหลัง", D: "ออกแบบ–>ลักษณะพื้นหลัง" }, answer: "D" },
+            { question: "การเชื่อมโยงหลายมิติ หมายถึงอะไร", options: { A: "การกำหนดที่อยู่ของภาพนิ่ง", B: "การนำเสนอภาพนิ่งแบบกำหนดเอง", C: "การใส่เทคนิคการเปลี่ยนภาพนิ่งให้กับภาพนิ่ง", D: "การเชื่อมต่อจากภาพนิ่งหนึ่งไปยังอีกภาพนิ่งหนึ่ง" }, answer: "D" },
+            { question: "ไฟล์งาน PowerPoint ที่บันทึกแล้วจะมีนามสกุลใด", options: { A: "*.exe", B: "*.pptx", C: "*.docx", D: "*.xlsx" }, answer: "B" },
+            { question: "ถ้าต้องการออกจากการนำเสนอภาพนิ่งให้กดปุ่มใด", options: { A: "End", B: "Esc", C: "Ctrl+F4", D: "ถูกทั้งข้อ A. และ B." }, answer: "B" },
+            { question: "ข้อใดคือการทำงานของปุ่มคำสั่ง [รูปภาพปุ่ม]", options: { A: "การออกแบบภาพนิ่ง", B: "การนำเสนอภาพนิ่ง", C: "การแก้ไขรูปแบบพื้นหลัง", D: "ผิดทุกข้อ" }, answer: "D" },
+            { question: "พื้นที่สำหรับการจัดทำข้อมูลนำเสนอ ของโปรแกรม Microsoft PowerPoint", options: { A: "ชีท", B: "แผ่นงาน", C: "เอกสารเปล่า", D: "สไลด์" }, answer: "D" },
+            { question: "ถ้าเราต้องการใส่วันที่และเวลาต้องใช้คำสั่งใด", options: { A: "หน้าแรก>วันที่และเวลา", B: "มุมมอง วันที่และเวลา", C: "แทรก วันที่และเวลา", D: "ออกแบบ>วันที่และเวลา" }, answer: "C" },
+            { question: "คำสั่งการนำเสนอภาพนิ่งสามารถใช้ปุ่มใดต่อไปนี้", options: { A: "F5", B: "F6", C: "F7", D: "F8" }, answer: "A" },
+            { question: "เราสามารถเลือกชุดรูปแบบได้จากแท็บเครื่องมือใด", options: { A: "แทรก", B: "ออกแบบ", C: "ภาพเคลื่อนไหว", D: "การนำเสนอภาพนิ่ง" }, answer: "B" },
+            { question: "เมื่อต้องการตัดบางส่วนของรูปภาพควรใช้เครื่องมือใดต่อไปนี้", options: { A: "คลิกซ้ายที่รูปภาพ>แท็บรูปแบบ จัดแนว", B: "คลิกซ้ายที่รูปภาพ>แท็บรูปแบบ>ครอบตัด", C: "คลิกขวาที่รูปภาพ>ตัด", D: "ไม่มีข้อใดถูก" }, answer: "B" },
+            { question: "เมื่อต้องการเพิ่มภาพนิ่ง (Slide) จะใช้คำสั่งใด", options: { A: "แทบหน้าแรก>สร้างภาพนิ่ง", B: "แทบแทรก>แทรกภาพนิ่ง", C: "แท็บภาพเคลื่อนไหว>สร้างภาพนิ่ง", D: "แท็บออกแบบ>สร้างภาพนิ่ง" }, answer: "A" },
+            { question: "แผนภูมิใดเหมาะกับการแสดงข้อมูลด้านเวลาและระยะทาง", options: { A: "แผนภูมิแท่งแนวตั้ง", B: "แผนภูมิเส้น", C: "แผนภูมิแท่งแนวนอน", D: "แผนภูมิวงกลม" }, answer: "B" },
+            { question: "การคำนวณดอกเบี้ยจ่ายควรใช้โปรแกรมใด", options: { A: "Microsoft Word", B: "Microsoft Access", C: "Microsoft Excel", D: "Microsoft PowerPoint" }, answer: "C" },
+            { question: "ขนาดกระดาษที่ใช้ในการพิมพ์เอกสารทั่วไปคือข้อใด", options: { A: "B4", B: "A4", C: "Letter", D: "B5" }, answer: "B" },
+            { question: "เครื่องหมายนี้ >= หมายถึงข้อใด", options: { A: "มากกว่า", B: "น้อยกว่า", C: "มากกว่าหรือเท่ากับ", D: "น้อยกว่าหรือเท่ากับ" }, answer: "C" },
+            { question: "โปรแกรม Microsoft office ที่เหมาะสำหรับการทำงานในรูปแบบจัดการฐานข้อมูลตรงกับข้อใด", options: { A: "Microsoft Word", B: "Microsoft Access", C: "Microsoft Excel", D: "Microsoft PowerPoint" }, answer: "B" },
+            { question: "วิธีการบันทึกภาพหน้าจอคอมพิวเตอร์(แคปหน้าจอ)ที่ง่ายที่สุดประหยัดเวลามากที่สุดคือวิธีใด", options: { A: "กดปุ่ม Windown + Alt+S", B: "กดปุ่ม Windown + Alt", C: "กดปุ่ม Print Screen (Prtsc)", D: "กดปุ่ม Windown + Shift + s" }, answer: "C" },
+            { question: "ปุ่มหลักที่ใช้ควบคุมหรือจัดการเมนูหลักชื่อว่าอะไร", options: { A: "ปุ่ม File", B: "ปุ่ม Edit", C: "ปุ่ม Office", D: "ปุ่ม insert" }, answer: "A" },
+            { question: "โปรแกรม Microsoft Access ใช้ในการทำงานรูปแบบใด", options: { A: "สร้างงานเอกสาร", B: "ระบบฐานข้อมูล", C: "สร้างตารางงาน", D: "การนำเสนองาน" }, answer: "B" },
+            { question: "โปรแกรม Microsoft Excel ใช้ในการทำงานรูปแบบใด", options: { A: "สร้างงานรูปแบบเอกสาร", B: "ระบบฐานข้อมูล", C: "โปรแกรมสร้างรูปแบบตารางงาน", D: "การนำเสนองาน" }, answer: "C" },
+            { question: "รูปแบบตัวอักษรใดที่ใช้ในการพิมพ์เอกสารหนังสือราชการไทย", options: { A: "Calibri Light (Headings)", B: "(Headings)", C: "TH SarabunPSK", D: "TH bunPSK" }, answer: "C" },
+            { question: "ถ้าต้องการหาค่าคะแนนสูงสุดในการสอบ ควรใช้ฟังก์ชันใด", options: { A: "Sum()", B: "Min()", C: "Max()", D: "Avg()" }, answer: "C" },
+            { question: "การหาค่าต่ำสุดในExcelจะต้องใช้ฟังก์ชั่นใด", options: { A: "Min()", B: "Max()", C: "Avg()", D: "Average()" }, answer: "A" },
+            { question: "ข้อใดคือฟังก์ชั่นหาค่าเฉลี่ยในExcel", options: { A: "Min()", B: "Max()", C: "Avg()", D: "Average()" }, answer: "D" },
+            { question: "หน่วยประมวลผล (CPU) ย่อมาจากคำว่าอะไร", options: { A: "Control Processing Unit", B: "Central Reconning Unit", C: "Can Program Unit", D: "Central Processing Unit" }, answer: "D" },
+            { question: "Microphone เป็นอุปกรณ์ฮาร์ดแวร์ในหน่วยการทำงานใด", options: { A: "หน่วยรับข้อมูล", B: "หน่วยแสดงผล", C: "หน่วยความจำ", D: "หน่วยประมวลผล" }, answer: "A" },
+            { question: "ฮาร์ดแวร์ (Hardware) คืออะไร", options: { A: "อุปกรณ์อิเล็กทรอนิกส์ที่ประกอบขึ้นเป็นเครื่องคอมพิวเตอร์ ที่สามารถสัมผัสได้และมองเห็นได้", B: "Application", C: "เครื่องจักรอิเล็กทรอนิกส์ที่ทำงานตามขั้นตอนของโปรแกรม", D: "ระบบโปรแกรมการทำงาน" }, answer: "A" },
+            { question: "ฮาร์ดแวร์ (Hardware) แบ่งส่วนการทำงานเป็นกี่หน่วย", options: { A: "2หน่วย", B: "3หน่วย", C: "4หน่วย", D: "5หน่วย" }, answer: "C" },
+            { question: "ซอฟต์แวร์ Software มีกี่ประเภท", options: { A: "Software มีแค่อย่างเดียว", B: "Software มี2ประเภท", C: "Software มี3ประเภท", D: "ไม่มีข้อถูก" }, answer: "B" },
+            { question: "อุปกรณ์ที่มีหน้าที่ในการจ่ายไฟฟ้าให้กับชิ้นส่วนอุปกรณ์คอมพิวเตอร์แต่ละชิ้น", options: { A: "Power Supply", B: "Harddisk", C: "Case", D: "Mainboard" }, answer: "A" },
+            { question: "ระบบปฏิบัติการ (operating system) หรือ โอเอส (OS)คืออะไร", options: { A: "เป็นระบบซอฟต์แวร์ที่ทำหน้าที่จัดการอุปกรณ์คอมพิวเตอร์และแหล่งซอฟต์แวร์และบริการโปรแกรมคอมพิวเตอร์", B: "เป็นอุปกรณ์ที่รับช่วงการประมวลผลต่อจากซีพียูโดย", C: "เมนบอร์ดเป็นแผงวงจรที่รวมชิ้นส่วนฮาร์ดแวร์ที่สำคัญเข้าไว้ด้วยกัน", D: "อุปกรณ์ที่มีหน้าที่ในการจ่ายไฟฟ้าให้กับชิ้นส่วนอุปกรณ์คอมพิวเตอร์แต่ละชิ้น" }, answer: "A" },
+            { question: "ข้อใดคือปุ่มทำงานลัดเพื่อค้นหาข้อความ", options: { A: "กดCtrl+F", B: "กดCtrl+N", C: "กดCtrl+S", D: "กดCtrl+H" }, answer: "A" },
+            { question: "ข้อใดคือปุ่มทำงานลัดเพื่อเปลี่ยนข้อความ", options: { A: "กดCtrl+F", B: "กดCtrl+N", C: "กดCtrl+S", D: "กดCtrl+H" }, answer: "D" },
+        ];
+        
+        // --- DOM Elements & Logic ---
+        const startScreen = document.getElementById('start-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const questionsWrapper = document.getElementById('questions-wrapper');
+        const startBtn = document.getElementById('start-btn');
+        let userAnswers = {};
+
+        function startQuiz() {
+            startScreen.style.display = 'none';
+            quizContainer.style.display = 'block';
+            displayQuiz();
+        }
+
+        function displayQuiz() {
+            questionsWrapper.innerHTML = '';
+            userAnswers = {};
+            quizData.forEach((q, index) => {
+                const questionBlock = document.createElement('div');
+                questionBlock.className = 'question-block';
+                questionBlock.id = `q-block-${index}`;
+                
+                questionBlock.innerHTML = `
+                    <p>${index + 1}. ${q.question}</p>
+                    <div class="options-grid">
+                        ${Object.keys(q.options).map(key => `
+                            <button class="option-btn" data-question-index="${index}" data-option-key="${key}">
+                                ${key}. ${q.options[key]}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-text" id="feedback-${index}" style="display: none;"></div>
+                    <div class="question-controls">
+                        <button class="btn btn-small submit-question-btn" data-question-index="${index}" disabled>ส่งคำตอบ</button>
+                        <button class="btn btn-small retry-question-btn" data-question-index="${index}" style="display: none;">ทำข้อนี้อีกครั้ง</button>
+                    </div>
+                `;
+                
+                questionsWrapper.appendChild(questionBlock);
+            });
+
+            questionsWrapper.querySelectorAll('.option-btn').forEach(btn => btn.addEventListener('click', handleOptionSelect));
+            questionsWrapper.querySelectorAll('.submit-question-btn').forEach(btn => btn.addEventListener('click', checkSingleAnswer));
+            questionsWrapper.querySelectorAll('.retry-question-btn').forEach(btn => btn.addEventListener('click', retryQuestion));
+        }
+        
+        function handleOptionSelect(event) {
+            const selectedBtn = event.target;
+            const questionIndex = selectedBtn.dataset.questionIndex;
+
+            const questionBlock = document.getElementById(`q-block-${questionIndex}`);
+            const submitBtn = questionBlock.querySelector('.submit-question-btn');
+            submitBtn.disabled = false;
+
+            userAnswers[questionIndex] = selectedBtn.dataset.optionKey;
+
+            const optionButtons = questionBlock.querySelectorAll('.option-btn');
+            optionButtons.forEach(btn => btn.classList.remove('selected'));
+            selectedBtn.classList.add('selected');
+        }
+
+        function checkSingleAnswer(event) {
+            const submitBtn = event.target;
+            const questionIndex = submitBtn.dataset.questionIndex;
+            const questionBlock = document.getElementById(`q-block-${questionIndex}`);
+            
+            const userAnswerKey = userAnswers[questionIndex];
+            const correctAnswerKey = quizData[questionIndex].answer;
+            const isCorrect = userAnswerKey === correctAnswerKey;
+
+            const feedbackDiv = questionBlock.querySelector('.feedback-text');
+            if (isCorrect) {
+                feedbackDiv.textContent = '✔ ถูกต้อง!';
+                feedbackDiv.className = 'feedback-text correct';
+                questionBlock.classList.add('is-correct-answered'); // --- REQUIREMENT 3: Activate animation ---
+            } else {
+                feedbackDiv.innerHTML = `✖ ผิด! <br>เฉลยที่ถูกต้องคือ: ${correctAnswerKey}. ${quizData[questionIndex].options[correctAnswerKey]}`;
+                feedbackDiv.className = 'feedback-text incorrect';
+            }
+            feedbackDiv.style.display = 'block';
+
+            const optionButtons = questionBlock.querySelectorAll('.option-btn');
+            optionButtons.forEach(btn => {
+                btn.disabled = true;
+                const optionKey = btn.dataset.optionKey;
+                
+                if (optionKey === correctAnswerKey) {
+                    btn.classList.add('correct');
+                } else if (optionKey === userAnswerKey) {
+                    btn.classList.add('incorrect');
+                }
+            });
+
+            submitBtn.style.display = 'none';
+            const retryBtn = questionBlock.querySelector('.retry-question-btn');
+            retryBtn.style.display = 'inline-block';
+        }
+        
+        function retryQuestion(event) {
+            const retryBtn = event.target;
+            const questionIndex = retryBtn.dataset.questionIndex;
+            const questionBlock = document.getElementById(`q-block-${questionIndex}`);
+            
+            questionBlock.classList.remove('is-correct-answered'); // --- Deactivate animation ---
+
+            delete userAnswers[questionIndex];
+
+            const feedbackDiv = questionBlock.querySelector('.feedback-text');
+            feedbackDiv.style.display = 'none';
+
+            const optionButtons = questionBlock.querySelectorAll('.option-btn');
+            optionButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('selected', 'correct', 'incorrect');
+            });
+
+            retryBtn.style.display = 'none';
+            const submitBtn = questionBlock.querySelector('.submit-question-btn');
+            submitBtn.style.display = 'inline-block';
+            submitBtn.disabled = true;
+        }
+
+        startBtn.addEventListener('click', startQuiz);
+    </script>
+</body>
+</html>
